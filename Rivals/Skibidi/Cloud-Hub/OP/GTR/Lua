@@ -1,0 +1,365 @@
+-- Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+-- Create a Window
+local Window = Rayfield:CreateWindow({
+    Name = "Cloud Hub | Rivals | SkibidiScript",
+    LoadingTitle = "Look At My Amazing Loading Magic…",
+    LoadingSubtitle = "made by SkibidiScript",
+    ConfigurationSaving = {
+       Enabled = true,
+       FolderName = Rivals,
+       FileName = "Rivals"
+    },
+    Discord = {
+       Enabled = true,
+       Invite = "ARkQD6RU2R", -- Replace if you want a Discord invite
+       RememberJoins = true
+    },
+    KeySystem = false -- Set to true if you want a key system
+})
+
+-- Create a 🎯Aimbot Tab 
+local MainTab = Window:CreateTab("Main-Aimbot", nil) -- Tab name and icon
+
+-- Slider for aimbot power
+local AimbotSlider = MainTab:CreateSlider({
+   Name = "Aimbot Power (0 - 10,000)",
+   Range = {0, 10000},
+   Increment = 1,
+   Suffix = "Power",
+   CurrentValue = 0,
+   Flag = "AimbotSlider",
+   Callback = function(Value)
+      aimbotPower = Value
+   end,
+})
+
+-- Aimbot Set Button
+MainTab:CreateButton({
+   Name = "Aimbot Set",
+   Callback = function()
+      if aimbotPower > 0 then
+         aimbotEnabled = true
+         Rayfield:Notify({
+            Title = "Aimbot Enabled",
+            Content = "Aimbot power set to " .. aimbotPower,
+            Duration = 4,
+         })
+         -- Replace below with real aimbot logic
+         print("Aimbot set to power level:", aimbotPower)
+      else
+         Rayfield:Notify({
+            Title = "Invalid Power",
+            Content = "Please set aimbot power above 0!",
+            Duration = 3,
+         })
+      end
+   end,
+})
+
+-- Aimbot Off Button
+MainTab:CreateButton({
+   Name = "Aimbot Off",
+   Callback = function()
+      if aimbotEnabled then
+         aimbotEnabled = false
+         Rayfield:Notify({
+            Title = "Aimbot Disabled",
+            Content = "Aimbot has been turned off.",
+            Duration = 4,
+         })
+         -- Disable logic here
+         print("Aimbot disabled.")
+      else
+         Rayfield:Notify({
+            Title = "Already Off",
+            Content = "Aimbot is not currently enabled.",
+            Duration = 3,
+         })
+      end
+   end,
+})
+
+-- 🟥 MAIN-ESP TAB
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local espObjects = {}
+local selectedColor = Color3.fromRGB(255, 0, 0)
+local selectedShape = "Box"
+
+local EspTab = Window:CreateTab("🟥 Main-Esp", nil)
+
+-- Color Input Box
+EspTab:CreateInput({
+    Name = "ESP Color (e.g. red, 255,0,0, #ff0000)",
+    PlaceholderText = "Type a color name, RGB or Hex",
+    RemoveTextAfterFocusLost = true,
+    Callback = function(text)
+        local namedColors = {
+            red = Color3.fromRGB(255, 0, 0),
+            green = Color3.fromRGB(0, 255, 0),
+            blue = Color3.fromRGB(0, 0, 255),
+            yellow = Color3.fromRGB(255, 255, 0),
+            white = Color3.fromRGB(255, 255, 255),
+            black = Color3.fromRGB(0, 0, 0),
+        }
+
+        text = text:lower()
+        if namedColors[text] then
+            selectedColor = namedColors[text]
+        elseif text:match("^#?%x%x%x%x%x%x$") then
+            text = text:gsub("#", "")
+            local r = tonumber(text:sub(1, 2), 16)
+            local g = tonumber(text:sub(3, 4), 16)
+            local b = tonumber(text:sub(5, 6), 16)
+            selectedColor = Color3.fromRGB(r, g, b)
+        elseif text:match("^%d+,%d+,%d+$") then
+            local r, g, b = text:match("^(%d+),(%d+),(%d+)$")
+            selectedColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+        else
+            Rayfield:Notify({
+                Title = "Invalid Color",
+                Content = "Try red, 255,0,0 or #ff0000",
+                Duration = 3,
+            })
+        end
+    end,
+})
+
+-- Shape Selector
+EspTab:CreateDropdown({
+    Name = "ESP Shape",
+    Options = {"Box", "Circle"},
+    CurrentOption = "Box",
+    Callback = function(option)
+        selectedShape = option
+    end,
+})
+
+-- Set ESP Button
+EspTab:CreateButton({
+    Name = "Set Esp Player",
+    Callback = function()
+        -- Clear existing ESPs
+        for _, obj in pairs(espObjects) do
+            if obj and obj.Destroy then
+                obj:Destroy()
+            end
+        end
+        espObjects = {}
+
+        -- Apply ESP to all players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local part = player.Character.HumanoidRootPart
+                local adornment = Instance.new("BoxHandleAdornment")
+                adornment.Name = "ESP"
+                adornment.AlwaysOnTop = true
+                adornment.ZIndex = 5
+                adornment.Adornee = part
+                adornment.Size = (selectedShape == "Box") and Vector3.new(4, 6, 2) or Vector3.new(5, 5, 0.1)
+                adornment.Color3 = selectedColor
+                adornment.Transparency = 0.25
+                adornment.Parent = part
+                table.insert(espObjects, adornment)
+            end
+        end
+
+        Rayfield:Notify({
+            Title = "ESP Activated",
+            Content = "ESP set with chosen color and shape.",
+            Duration = 3,
+        })
+    end,
+})
+
+-- Turn Off ESP Button
+EspTab:CreateButton({
+    Name = "Set Esp Players Off",
+    Callback = function()
+        for _, obj in pairs(espObjects) do
+            if obj and obj.Destroy then
+                obj:Destroy()
+            end
+        end
+        espObjects = {}
+
+        Rayfield:Notify({
+            Title = "ESP Disabled",
+            Content = "All ESP visuals removed.",
+            Duration = 3,
+        })
+    end,
+})
+
+-- 🎮 Main-Auto Tab
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local matchSize = "1v1"
+local autoPlayEnabled = false
+local savedSettingsFile = "main_auto_settings.json"
+
+-- Attempt to load previous mode (if server changed)
+pcall(function()
+    if isfile(savedSettingsFile) then
+        local data = HttpService:JSONDecode(readfile(savedSettingsFile))
+        matchSize = data.mode
+        autoPlayEnabled = data.autoPlay
+    end
+end)
+
+-- Save settings for next server
+local function saveAutoPlaySettings()
+    local data = {
+        mode = matchSize,
+        autoPlay = autoPlayEnabled
+    }
+    writefile(savedSettingsFile, HttpService:JSONEncode(data))
+end
+
+local AutoTab = Window:CreateTab("🎮 Main-Auto", nil)
+
+AutoTab:CreateDropdown({
+    Name = "Choose Match Mode",
+    Options = {"1v1", "2v2", "3v3", "4v4", "5v5"},
+    CurrentOption = matchSize,
+    Callback = function(option)
+        matchSize = option
+        saveAutoPlaySettings()
+    end
+})
+
+AutoTab:CreateButton({
+    Name = "Auto Play",
+    Callback = function()
+        autoPlayEnabled = true
+        saveAutoPlaySettings()
+
+        Rayfield:Notify({
+            Title = "Auto Play Enabled",
+            Content = "You picked: " .. matchSize .. ". Script will auto play every server.",
+            Duration = 4
+        })
+
+        -- Main auto play loop
+        task.spawn(function()
+            while autoPlayEnabled do
+                -- Example pseudo logic to auto-join based on match type
+                local matchFound = false
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") and obj.Name:lower():find(matchSize:lower()) then
+                        fireproximityprompt(obj)
+                        matchFound = true
+                        break
+                    end
+                end
+
+                if not matchFound then
+                    Rayfield:Notify({
+                        Title = "Match Not Found",
+                        Content = "No available " .. matchSize .. " match. Waiting...",
+                        Duration = 3
+                    })
+                else
+                    wait(3)
+                    -- Simulated aimbot support
+                    local aimbotPower = _G.AimbotPower or 0
+                    if aimbotPower >= 9000 then
+                        Rayfield:Notify({
+                            Title = "Aimbot Activated",
+                            Content = "Using max aimbot power. You will dominate this match.",
+                            Duration = 4
+                        })
+                    end
+                end
+
+                wait(15) -- Adjust to match duration
+            end
+        end)
+    end
+})
+
+local OthersTab = Window:CreateTab("🧩 Others Rivals Script", nil)
+
+-- Zypherion Script
+OthersTab:CreateButton({
+    Name = "Zypherion Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/blackowl1231/ZYPHERION/refs/heads/main/main.lua"))()
+    end,
+})
+
+-- Ember Script
+OthersTab:CreateButton({
+    Name = "Ember Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/scripter66/EmberHub/refs/heads/main/Rivals.lua"))()
+    end,
+})
+
+-- 8bit Script
+OthersTab:CreateButton({
+    Name = "8bit Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/8bits4ya/rivals-v3/refs/heads/ma/main.lua"))()
+    end,
+})
+
+-- Azure Script
+OthersTab:CreateButton({
+    Name = "Azure Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Actyrn/Scripts/main/AzureModded"))()
+    end,
+})
+
+- -Job Id Join
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local placeId = game.PlaceId
+local currentJobId = game.JobId
+local jobIdToJoin = ""
+
+local JobTab = Window:CreateTab("⭐️Job ID⭐️", nil)
+
+-- Textbox to type Job ID
+JobTab:CreateInput({
+    Name = "Enter Job ID",
+    PlaceholderText = "Paste job ID here...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Value)
+        jobIdToJoin = Value
+    end,
+})
+
+-- Button to teleport to typed Job ID
+JobTab:CreateButton({
+    Name = "Join Job ID",
+    Callback = function()
+        if jobIdToJoin ~= "" then
+            TeleportService:TeleportToPlaceInstance(placeId, jobIdToJoin, LocalPlayer)
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Please enter a Job ID first.",
+                Duration = 3
+            })
+        end
+    end,
+})
+
+-- Label showing current Job ID
+JobTab:CreateParagraph({
+    Title = "Current Job ID:",
+    Content = currentJobId
+})
